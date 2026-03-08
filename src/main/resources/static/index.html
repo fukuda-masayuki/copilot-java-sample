@@ -33,6 +33,11 @@
             flex-wrap: wrap;
         }
 
+        .task-form label {
+            width: 100%;
+            font-size: 0.95rem;
+        }
+
         .task-form input {
             flex: 1;
             min-width: 220px;
@@ -85,6 +90,7 @@
 <main class="container">
     <h1>ToDo</h1>
     <form id="task-form" class="task-form">
+        <label for="task-title">タスクタイトル</label>
         <input id="task-title" type="text" placeholder="タスクを入力してください" aria-label="タスクタイトル">
         <button id="submit-button" type="submit">登録</button>
     </form>
@@ -99,16 +105,21 @@
     const taskList = document.getElementById("task-list");
 
     async function loadTasks() {
-        const response = await fetch("/tasks");
-        if (!response.ok) {
-            throw new Error("タスク一覧の取得に失敗しました");
-        }
-        const tasks = await response.json();
-        taskList.innerHTML = "";
-        for (const task of tasks) {
-            const item = document.createElement("li");
-            item.textContent = task.title;
-            taskList.appendChild(item);
+        try {
+            const response = await fetch("/tasks");
+            if (!response.ok) {
+                showError("タスク一覧の取得に失敗しました");
+                return;
+            }
+            const tasks = await response.json();
+            taskList.innerHTML = "";
+            for (const task of tasks) {
+                const item = document.createElement("li");
+                item.textContent = task.title;
+                taskList.appendChild(item);
+            }
+        } catch (error) {
+            showError("通信エラーが発生しました");
         }
     }
 
@@ -122,7 +133,7 @@
 
         const title = taskTitleInput.value.trim();
         if (!title) {
-            showError("title を入力してください");
+            showError("タスクタイトルを入力してください");
             return;
         }
 
@@ -148,7 +159,7 @@
         }
     });
 
-    loadTasks().catch(() => showError("タスク一覧の取得に失敗しました"));
+    loadTasks();
 </script>
 </body>
 </html>
