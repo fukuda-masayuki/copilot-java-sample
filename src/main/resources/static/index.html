@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDo</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f7f7f7;
+            color: #222;
+        }
+
+        .container {
+            max-width: 640px;
+            margin: 32px auto;
+            padding: 24px;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            margin: 0 0 16px;
+            font-size: 1.6rem;
+        }
+
+        .task-form {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .task-form label {
+            width: 100%;
+            font-size: 0.95rem;
+        }
+
+        .task-form input {
+            flex: 1;
+            min-width: 220px;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #cfcfcf;
+            border-radius: 6px;
+        }
+
+        .task-form button {
+            padding: 10px 14px;
+            font-size: 1rem;
+            border: 0;
+            border-radius: 6px;
+            color: #fff;
+            background: #2563eb;
+            cursor: pointer;
+        }
+
+        .task-form button:disabled {
+            background: #94a3b8;
+            cursor: default;
+        }
+
+        .error {
+            margin: 10px 0 0;
+            color: #dc2626;
+            min-height: 1.2em;
+        }
+
+        ul {
+            margin: 16px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        li {
+            padding: 10px 12px;
+            border: 1px solid #ececec;
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        li + li {
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+<main class="container">
+    <h1>ToDo</h1>
+    <form id="task-form" class="task-form">
+        <label for="task-title">タスクタイトル</label>
+        <input id="task-title" type="text" placeholder="タスクを入力してください" aria-label="タスクタイトル">
+        <button id="submit-button" type="submit">登録</button>
+    </form>
+    <p id="error-message" class="error" role="alert"></p>
+    <ul id="task-list"></ul>
+</main>
+<script>
+    const taskForm = document.getElementById("task-form");
+    const taskTitleInput = document.getElementById("task-title");
+    const submitButton = document.getElementById("submit-button");
+    const errorMessage = document.getElementById("error-message");
+    const taskList = document.getElementById("task-list");
+
+    async function loadTasks() {
+        try {
+            const response = await fetch("/tasks");
+            if (!response.ok) {
+                showError("タスク一覧の取得に失敗しました");
+                return;
+            }
+            const tasks = await response.json();
+            taskList.innerHTML = "";
+            for (const task of tasks) {
+                const item = document.createElement("li");
+                item.textContent = task.title;
+                taskList.appendChild(item);
+            }
+        } catch (error) {
+            showError("通信エラーが発生しました");
+        }
+    }
+
+    function showError(message) {
+        errorMessage.textContent = message;
+    }
+
+    taskForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        showError("");
+
+        const title = taskTitleInput.value.trim();
+        if (!title) {
+            showError("タスクタイトルを入力してください");
+            return;
+        }
+
+        submitButton.disabled = true;
+        try {
+            const response = await fetch("/tasks", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({title})
+            });
+
+            if (!response.ok) {
+                showError("タスク登録に失敗しました");
+                return;
+            }
+
+            taskTitleInput.value = "";
+            await loadTasks();
+        } catch (error) {
+            showError("通信エラーが発生しました");
+        } finally {
+            submitButton.disabled = false;
+        }
+    });
+
+    loadTasks();
+</script>
+</body>
+</html>
